@@ -93,16 +93,16 @@ public class RNWifiModule extends ReactContextBaseJavaModule {
 
 	//Method to force wifi usage if the user needs to send requests via wifi
 	//if it does not have internet connection. Useful for IoT applications, when
-	//the app needs to communicate and send requests to a device that have no 
+	//the app needs to communicate and send requests to a device that have no
 	//internet connection via wifi.
 
 	//Receives a boolean to enable forceWifiUsage if true, and disable if false.
-	//Is important to enable only when communicating with the device via wifi 
+	//Is important to enable only when communicating with the device via wifi
 	//and remember to disable it when disconnecting from device.
 	@ReactMethod
 	public void forceWifiUsage(boolean useWifi) {
         boolean canWriteFlag = false;
-		
+
         if (useWifi) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
@@ -209,7 +209,7 @@ public class RNWifiModule extends ReactContextBaseJavaModule {
 	public Boolean connectTo(ScanResult result, String password, String ssid) {
 		//Make new configuration
 		WifiConfiguration conf = new WifiConfiguration();
-		
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         conf.SSID = ssid;
     } else {
@@ -217,29 +217,29 @@ public class RNWifiModule extends ReactContextBaseJavaModule {
     }
 
 		String capabilities = result.capabilities;
-		
-		if (capabilities.contains("WPA")  || 
-          capabilities.contains("WPA2") || 
+
+		if (capabilities.contains("WPA")  ||
+          capabilities.contains("WPA2") ||
           capabilities.contains("WPA/WPA2 PSK")) {
 
 	    // appropriate ciper is need to set according to security type used,
 	    // ifcase of not added it will not be able to connect
 	    conf.preSharedKey = "\"" + password + "\"";
-	    
+
 	    conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-	    
+
 	    conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-	    
+
 	    conf.status = WifiConfiguration.Status.ENABLED;
-	    
+
 	    conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
 	    conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-	    
+
 	    conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-	    
+
 	    conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
 	    conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-	    
+
 	    conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
 	    conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
 
@@ -294,9 +294,10 @@ public class RNWifiModule extends ReactContextBaseJavaModule {
 		wifi.disconnect();
 	}
 
-	//This method will return current ssid
+  //This method will return current ssid
 	@ReactMethod
 	public void getCurrentWifiSSID(final Promise promise) {
+    JSONObject currentWifiObject = new JSONObject();
 		WifiInfo info = wifi.getConnectionInfo();
 
 		// This value should be wrapped in double quotes, so we need to unwrap it.
@@ -304,8 +305,18 @@ public class RNWifiModule extends ReactContextBaseJavaModule {
 		if (ssid.startsWith("\"") && ssid.endsWith("\"")) {
 			ssid = ssid.substring(1, ssid.length() - 1);
 		}
+    String bssid = info.getBSSID();
+    int frequency = info.getFrequency();
 
-		promise.resolve(ssid);
+    try {
+      currentWifiObject.put("SSID", ssid);
+      currentWifiObject.put("BSSID", bssid);
+      currentWifiObject.put("frequency", frequency);
+    } catch (JSONException e) {
+      promise.reject(e.getMessage());
+    }
+
+		promise.resolve(currentWifiObject.toString());
 	}
 
 	//This method will return the basic service set identifier (BSSID) of the current access point
